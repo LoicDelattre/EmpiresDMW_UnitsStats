@@ -16,4 +16,8 @@ for item in unitsSpace:
     attribute = item.find_all("a")[0] #outpus a 1 element list hence [0]
     unitsLinks.append(attribute["href"])
 
+<<<<<<< HEAD
 print(unitsLinks)
+=======
+print(unitsLinks)
+>>>>>>> develop
