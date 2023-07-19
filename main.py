@@ -1,6 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 import csv
+import time
+
+start_time = time.time()
 
 homePageUrl = "https://empireearth.fandom.com/wiki/Category:Empires:_Dawn_of_the_Modern_World_Units"
 baseUrl = "https://empireearth.fandom.com"
@@ -63,7 +66,10 @@ for item in unitsSpace:
         category = infoAreas[i]["data-source"]
         categRecord.append(category)
         if category == "Epoch":
-            era = infoAreas[i].find("a").get_text()
+            try:
+                era = infoAreas[i].find("a").get_text()
+            except:
+               era = infoAreas[i].find("div").get_text() #if the era has a link
         elif category == "Trained At":
             try:
                 building = infoAreas[i].find("span").get_text()
@@ -117,23 +123,34 @@ for item in unitsSpace:
                 if '' in statList:
                     statList.remove('')
                 if statID not in statList:
-                    print(statID)
-                    print(statList)
                     stats[statsAreas[i].find("h3").get_text()] = "0"
                 else:
                     statIndex = statList.index(statID)
                     stats[statsAreas[i].find("h3").get_text()] = statList[statIndex -1]
 
             elif len(statList) > 1 and nationCount <= 1:
-                middle = statList[1].split(")")
-                statList[1] = middle[0] + ")"
-                statList.insert(2, middle[1])
-                if '' in statList:
-                    statList.remove('')
-                for j in range(len(typeID)):
-                    if typeID[j] in statList:
-                        stats[statsAreas[i].find("h3").get_text() + " " + typeID[j]] = statList[statList.index(typeID[j])-1]
-
+                if len(statList[1].replace("(", "").split()) > 1:
+                    middle = statList[1].split(")")
+                    statList[1] = middle[0] + ")"
+                    statList.insert(2, middle[1])
+                    if '' in statList:
+                        statList.remove('')
+                    for j in range(len(typeID)):
+                        if typeID[j] in statList:
+                            stats[statsAreas[i].find("h3").get_text() + " " + typeID[j]] = statList[statList.index(typeID[j])-1]
+                elif len(statList[1].replace("(", "").split()) == 1:
+                    if len(statList) == 5:
+                        typeID = ["", "Bombardment Mode"]
+                        statList = [statList[0], statList[1].replace("(", "")]
+                        for j in range(len(typeID)):
+                            if typeID[j] in statList:
+                                stats[statsAreas[i].find("h3").get_text() + " " + typeID[j]] = statList[j]
+                    elif len(statList) == 4:
+                        typeID = ["", "in Cannonade"]
+                        statList = [statList[0], statList[1].replace("(", "")]
+                        for j in range(len(typeID)):
+                            if typeID[j] in statList:
+                                stats[statsAreas[i].find("h3").get_text() + " " + typeID[j]] = statList[j]
             else:
                 stats[statsAreas[i].find("h3").get_text()] = statsAreas[i].find("div").get_text().replace(" ", "")
     
@@ -175,9 +192,11 @@ for item in unitsSpace:
         }   
 
         unitsOutputData.append(unitOut)
-        print(unitOut)
+        #print(unitOut)
 
-with open("UnitsRawData.csv", "w") as f:
+print("Run Time: %s seconds" % (time.time() - start_time))
+
+with open("UnitsRawData.csv", "w", newline = "") as f:
     writer = csv.writer(f)
     writer.writerow(unitsOutputData[0].keys())
     for i in range(len(unitsOutputData)):
